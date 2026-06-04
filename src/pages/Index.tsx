@@ -586,6 +586,8 @@ export default function Index() {
     | null
   >(null);
 
+  const [lessonDropdownOpen, setLessonDropdownOpen] = useState(false);
+
   useEffect(() => {
     localStorage.setItem("teacher-journal-v2", JSON.stringify(data));
   }, [data]);
@@ -645,21 +647,23 @@ export default function Index() {
   };
 
   const markAllPresent = () => {
-    if (activeGroup.lessons.length === 0) return;
-    const lastLesson = activeGroup.lessons[activeGroup.lessons.length - 1];
-    updateGroup(g => ({
-      ...g,
-      students: g.students.map(s => ({
-        ...s,
-        records: {
-          ...s.records,
-          [lastLesson.id]: {
-            attendance: "Б",
-            grade: s.records[lastLesson.id]?.grade ?? "",
+    updateGroup(g => {
+      if (g.lessons.length === 0) return g;
+      const lastLesson = g.lessons[g.lessons.length - 1];
+      return {
+        ...g,
+        students: g.students.map(s => ({
+          ...s,
+          records: {
+            ...s.records,
+            [lastLesson.id]: {
+              attendance: "Б" as AttendanceStatus,
+              grade: s.records[lastLesson.id]?.grade ?? "" as Grade,
+            },
           },
-        },
-      })),
-    }));
+        })),
+      };
+    });
   };
 
   const callToBoard = () => {
@@ -806,23 +810,31 @@ export default function Index() {
               </button>
 
               {/* Add lesson dropdown */}
-              <div className="relative group">
-                <button className="flex items-center gap-1.5 bg-white/15 border border-white/25 hover:bg-white/25 transition-colors text-white text-sm font-medium rounded-xl px-3 py-2">
+              <div className="relative">
+                <button
+                  className="flex items-center gap-1.5 bg-white/15 border border-white/25 hover:bg-white/25 transition-colors text-white text-sm font-medium rounded-xl px-3 py-2"
+                  onClick={() => setLessonDropdownOpen(v => !v)}
+                >
                   <Icon name="CalendarPlus" size={14} />
                   <span className="hidden md:inline">Добавить пару</span>
                   <Icon name="ChevronDown" size={12} />
                 </button>
-                <div className="absolute top-full right-0 mt-1 bg-white rounded-xl shadow-xl border border-border overflow-hidden hidden group-hover:block z-50 min-w-[150px]">
-                  {(["Лекция", "Практика", "Контрольная"] as LessonType[]).map(t => (
-                    <button
-                      key={t}
-                      className="w-full text-left px-4 py-2.5 text-sm text-foreground hover:bg-purple-50 transition-colors font-medium"
-                      onClick={() => addLesson(t)}
-                    >
-                      {t === "Лекция" ? "📖" : t === "Практика" ? "⚙️" : "📝"} {t}
-                    </button>
-                  ))}
-                </div>
+                {lessonDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setLessonDropdownOpen(false)} />
+                    <div className="absolute top-full right-0 mt-1 bg-white rounded-xl shadow-xl border border-border overflow-hidden z-50 min-w-[160px]">
+                      {(["Лекция", "Практика", "Контрольная"] as LessonType[]).map(t => (
+                        <button
+                          key={t}
+                          className="w-full text-left px-4 py-2.5 text-sm text-foreground hover:bg-purple-50 transition-colors font-medium"
+                          onClick={() => { addLesson(t); setLessonDropdownOpen(false); }}
+                        >
+                          {t === "Лекция" ? "📖" : t === "Практика" ? "⚙️" : "📝"} {t}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
 
               <button
